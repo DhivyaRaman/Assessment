@@ -1,7 +1,6 @@
-package ufo.service.impl;
+package ufo.service.implementation;
 
 import org.apache.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,9 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import ufo.dto.UfoSighting;
 import ufo.exception.ServiceException;
 import ufo.service.UfoSightingService;
@@ -25,8 +23,23 @@ import ufo.service.UfoSightingService;
 public class UfoSightingServiceImpl implements UfoSightingService {
     
     private static final Logger logger       = Logger.getLogger(UfoSightingServiceImpl.class);
-    private UfoSighting         ufoSighting;
-    List<UfoSighting>           allSightings = new ArrayList<UfoSighting>();
+
+    @Autowired
+    private UfoSighting ufoSighting;
+
+    /**
+     * Constants created to represent the indexes in the tsv file and file delimiter
+     */
+    private static final String FILE_DELIMITER = "\\t";
+    private static final int DATESEEN_INDEX = 0;
+    private static final int DATEREPORTED_INDEX = 1;
+    private static final int PLACESEEN_INDEX = 2;
+    private static final int SHAPE_INDEX = 3;
+    private static final int DURATION_INDEX = 4;
+    private static final int DESCRIPTION_INDEX = 5;
+    private static final int YEAR_MONTH_VALID_LENGTH = 6;
+
+    List<UfoSighting> allSightings = new ArrayList<UfoSighting>();
     
     /**
      * Method to get all the Sightings from the tsv file
@@ -45,28 +58,32 @@ public class UfoSightingServiceImpl implements UfoSightingService {
             Path path = Paths.get("src/main/resources/ufo_awesome.tsv");
             InputStream inputFileStream = new FileInputStream(String.valueOf(path));
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputFileStream));
-            
+
             String line = bufferedReader.readLine();
             long start = System.currentTimeMillis();
-            while (line != null && StringUtils.isNotEmpty(line)) {
+            while (StringUtils.isNotBlank(line) && StringUtils.isNotEmpty(line)) {
                 
                 ufoSighting = new UfoSighting();
-                String[] lineIndex = line.split("\\t");
-                if (lineIndex.length < 6) {
-                    logger.warn(String.format("Invalid data", line));
+                String[] lineIndex = line.split(FILE_DELIMITER);
+                if (lineIndex.length < YEAR_MONTH_VALID_LENGTH) {
+                    logger.info(String.format("Invalid data at line [%s]", line));
                     
                 } else {
-                    String dateSeen = lineIndex[0];
-                    String dateReported = lineIndex[1];
-                    String placeSeen = lineIndex[2];
-                    String shape = lineIndex[3];
-                    String duration = lineIndex[4];
-                    String description = lineIndex[5];
+                    String dateSeen = lineIndex[DATESEEN_INDEX].trim();
+                    String dateReported = lineIndex[DATEREPORTED_INDEX].trim();
+                    String placeSeen = lineIndex[PLACESEEN_INDEX].trim();
+                    String shape = lineIndex[SHAPE_INDEX].trim();
+                    String duration = lineIndex[DURATION_INDEX].trim();
+                    String description = lineIndex[DESCRIPTION_INDEX].trim();
                     ufoSighting = new UfoSighting(dateSeen, dateReported, placeSeen, shape, duration, description);
                     allSightings.add(ufoSighting);
                     
                 }
                 line = bufferedReader.readLine();
+
+                /**
+                 * Check for the NullPointer Exception
+                 */
                 if (line != null) {
                     line = line.trim();
                 }
@@ -74,7 +91,7 @@ public class UfoSightingServiceImpl implements UfoSightingService {
             
             long end = System.currentTimeMillis();
             long diff = end - start;
-            logger.info("Size of allSightings : " + allSightings.size());
+            logger.info("Searched allSightings of size  " + allSightings.size() + " in time period of " + diff + " milliseconds.");
             bufferedReader.close();
         } catch (IOException ioException) {
             throw new ServiceException(ioException);
@@ -102,11 +119,11 @@ public class UfoSightingServiceImpl implements UfoSightingService {
                     searchSightings.add(ufoSighting);
                 }
             }
-            System.out.println("Sightings of " + year + " and " + month + "is : " + searchSightings.size());
-            ;
+            logger.info("Sightings of " + year + " and " + month + " is : " + searchSightings.size());
+
         } catch (ServiceException serviceException) {
             logger.error("Service Exception is thrown from search() with error message: "
-                    + serviceException.getStackTrace());
+                    + serviceException.getMessage());
         }
         return searchSightings;
     }

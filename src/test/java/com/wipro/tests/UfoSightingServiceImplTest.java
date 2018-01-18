@@ -1,4 +1,4 @@
-package com.lloydsbanking.salsa.opapca.service;
+package com.wipro.tests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -9,12 +9,9 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.sun.org.apache.xpath.internal.WhitespaceStrippingElementMatcher;
-
 import ufo.dto.UfoSighting;
 import ufo.exception.ServiceException;
-import ufo.service.UfoSightingService;
-import ufo.service.impl.UfoSightingServiceImpl;
+import ufo.service.implementation.UfoSightingServiceImpl;
 
 /**
 * Test Class to test  getAllSightings() and search()
